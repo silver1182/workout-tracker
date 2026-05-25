@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1115">
+<title>增肌追踪</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1115;--panel:#181b22;--panel-2:#1e222b;--line:#282d38;
+  --ink:#eaeff5;--muted:#7c8596;
+  --accent:#ff5733;--accent-soft:rgba(255,87,51,.12);--accent-glow:rgba(255,87,51,.25);
+  --green:#34d399;--green-soft:rgba(52,211,153,.12);
+  --blue:#60a5fa;--yellow:#fbbf24;
+  --radius:14px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg);height:100%}
+body{
+  font-family:'Noto Sans SC',system-ui,-apple-system,sans-serif;
+  color:var(--ink);background:var(--bg);
+  max-width:520px;margin:0 auto;
+  padding:16px 16px calc(72px + var(--safe-b));
+  min-height:100%;-webkit-font-smoothing:antialiased;
+}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.hdr h1{font-size:22px;font-weight:800;letter-spacing:-.3px}
+.hdr h1 b{color:var(--accent);font-weight:800}
+.hdr-actions{display:flex;gap:6px}
+.hdr-btn{
+  width:36px;height:36px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel);color:var(--muted);font-size:16px;
+  display:grid;place-items:center;cursor:pointer;transition:.15s;
+}
+.hdr-btn:active{background:var(--panel-2);transform:scale(.93)}
+.dateline{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+
+.tabs{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px}
+.tab{
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:10px 0 8px;text-align:center;cursor:pointer;transition:.12s;
+  position:relative;user-select:none;
+}
+.tab:active{transform:scale(.94)}
+.tab .d{font-size:14px;font-weight:700}
+.tab .l{font-size:9.5px;color:var(--muted);margin-top:1px;font-weight:600}
+.tab.active{background:var(--accent-soft);border-color:var(--accent)}
+.tab.active .d{color:var(--accent)}
+.tab.rest .d{color:var(--muted);font-weight:500}
+.tab .dot{width:5px;height:5px;border-radius:50%;background:var(--green);margin:4px auto 0;opacity:0;transition:.2s}
+.tab.logged .dot{opacity:1}
+
+.ptabs{display:flex;gap:6px;margin-bottom:14px}
+.ptab{
+  flex:1;text-align:center;padding:9px 4px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--line);
+  font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:.12s;user-select:none;
+}
+.ptab:active{transform:scale(.96)}
+.ptab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+.view{display:none}.view.active{display:block}
+
+.dayhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dayhead h2{font-size:18px;font-weight:800}
+.dayhead .tag{font-size:10.5px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);padding:3px 10px;border-radius:20px}
+
+.ex{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;margin-bottom:10px;transition:border-color .2s;
+  animation:fadeUp .25s ease both;
+}
+.ex:nth-child(3){animation-delay:.04s}
+.ex:nth-child(4){animation-delay:.08s}
+.ex:nth-child(5){animation-delay:.12s}
+.ex:nth-child(6){animation-delay:.16s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ex.done{border-color:var(--green)}
+.ex-top{display:flex;align-items:flex-start;gap:10px}
+.ex-num{
+  flex:0 0 26px;height:26px;border-radius:8px;
+  background:var(--panel-2);border:1px solid var(--line);
+  display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;transition:.2s;
+}
+.ex.done .ex-num{background:var(--green);color:#052e16;border-color:var(--green)}
+.ex-body{flex:1;min-width:0}
+.ex-name{font-size:15px;font-weight:700}
+.ex-spec{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.ex-spec b{color:var(--blue);font-weight:600}
+.ex-spec .rest{color:var(--yellow)}
+.ex-cue{font-size:12px;color:var(--muted);margin-top:7px;padding-top:7px;border-top:1px dashed var(--line);line-height:1.5}
+.ex-check{
+  flex:0 0 auto;width:30px;height:30px;border-radius:9px;
+  border:1.5px solid var(--line);background:transparent;
+  cursor:pointer;display:grid;place-items:center;
+  color:transparent;font-size:16px;transition:.15s;
+}
+.ex-check:active{transform:scale(.85)}
+.ex.done .ex-check{background:var(--green);border-color:var(--green);color:#052e16}
+
+.ex-log{display:none;margin-top:10px;gap:8px;grid-template-columns:1fr 1fr}
+.ex.trackable .ex-log{display:grid}
+.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:600}
+.field input{
+  width:100%;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:9px;color:var(--ink);padding:10px 11px;
+  font-size:15px;font-family:'JetBrains Mono',monospace;
+}
+.field input::placeholder{color:#464e5e}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+
+.restday{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:36px 20px;text-align:center}
+.restday .icon{font-size:36px;margin-bottom:10px}
+.restday .big{font-size:16px;font-weight:700;margin-bottom:6px}
+.restday .sub{font-size:13px;color:var(--muted)}
+
+.core{background:var(--panel-2);border:1px dashed var(--line);border-radius:var(--radius);padding:14px;margin-top:6px}
+.core h3{font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.core .row{font-size:13px;display:flex;justify-content:space-between;padding:4px 0}
+.core .row span:last-child{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px}
+
+.savebar{position:sticky;bottom:0;padding:12px 0 4px;background:linear-gradient(transparent,var(--bg) 35%);display:flex;gap:8px;margin-top:14px}
+.btn{flex:1;padding:14px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.12s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{flex:0 0 auto;background:var(--panel);color:var(--muted);border:1px solid var(--line);padding:14px 18px}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.card h3{font-size:14px;font-weight:700;margin-bottom:10px}
+.pill{float:right;font-size:10px;color:var(--green);background:var(--green-soft);border:1px solid rgba(52,211,153,.3);padding:2px 8px;border-radius:20px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 5px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+td.num{color:var(--blue);font-family:'JetBrains Mono',monospace}
+.wk-input{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;color:var(--ink);padding:6px;font-size:12px;font-family:'JetBrains Mono',monospace;text-align:center}
+.wk-input:focus{outline:none;border-color:var(--accent)}
+
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:var(--green);color:#052e16;font-weight:700;font-size:13px;
+  padding:10px 20px;border-radius:30px;opacity:0;transition:.25s;pointer-events:none;z-index:100;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.timer-bar{
+  display:none;align-items:center;gap:10px;
+  background:var(--panel);border:1px solid var(--accent);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:12px;
+}
+.timer-bar.active{display:flex}
+.timer-display{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--accent);flex:1}
+.timer-label{font-size:12px;color:var(--muted)}
+.timer-btn{
+  width:38px;height:38px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel-2);color:var(--ink);font-size:15px;font-family:'JetBrains Mono',monospace;
+  display:grid;place-items:center;cursor:pointer;
+}
+.timer-btn.stop{font-family:inherit;font-size:18px}
+.timer-btn:active{transform:scale(.9)}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;place-items:center}
+.modal-bg.show{display:grid}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px 20px;width:calc(100% - 40px);max-width:380px}
+.modal h3{font-size:16px;font-weight:800;margin-bottom:14px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.modal-actions{display:flex;flex-direction:column;gap:8px}
+.modal-btn{
+  padding:14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel-2);color:var(--ink);font-size:14px;font-weight:600;
+  cursor:pointer;font-family:inherit;text-align:center;transition:.1s;
+}
+.modal-btn:active{transform:scale(.97)}
+.modal-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.modal-btn.danger{color:#f87171;border-color:#f8717144}
+.modal-close{margin-top:8px;padding:10px;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;width:100%;font-family:inherit}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>增肌<b>追踪</b></h1>
+  <div class="hdr-actions">
+    <button class="hdr-btn" id="timerToggle" title="计时器">⏱</button>
+    <button class="hdr-btn" id="menuBtn" title="数据管理">⋯</button>
+  </div>
+</div>
+<div class="dateline" id="dateline"></div>
+
+<div class="timer-bar" id="timerBar">
+  <div>
+    <div class="timer-display" id="timerDisplay">01:30</div>
+    <div class="timer-label">组间休息</div>
+  </div>
+  <button class="timer-btn" id="timer60">60</button>
+  <button class="timer-btn" id="timer75">75</button>
+  <button class="timer-btn" id="timer90">90</button>
+  <button class="timer-btn stop" id="timerStop">✕</button>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="ptabs">
+  <div class="ptab active" data-view="day">今日训练</div>
+  <div class="ptab" data-view="track">追踪</div>
+  <div class="ptab" data-view="diet">饮食</div>
+</div>
+
+<div class="view active" id="view-day"></div>
+<div class="view" id="view-track"></div>
+<div class="view" id="view-diet"></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>数据管理</h3>
+    <p>训练记录保存在本机浏览器中。<br>定期导出备份，换手机时导入恢复。</p>
+    <div class="modal-actions">
+      <button class="modal-btn primary" id="exportBtn">📦 导出备份 (JSON)</button>
+      <button class="modal-btn" id="importBtn">📂 导入备份</button>
+      <button class="modal-btn danger" id="clearBtn">🗑 清空所有数据</button>
+    </div>
+    <button class="modal-close" id="modalClose">关闭</button>
+  </div>
+</div>
+<input type="file" id="fileInput" accept=".json" style="display:none">
+
+<script>
+const PLAN={
+  mon:{name:"周一 · 推日",tag:"胸 + 肩前束 + 三头",rest:false,
+    ex:[
+      {id:"db_bench",name:"哑铃平板卧推",sets:"4×8-10",w:"单边 5-7.5kg",r:"90秒",cue:"肩胛下沉，下放至胸口两侧",track:true},
+      {id:"pushup",name:"俯卧撑",sets:"3×力竭",w:"自重",r:"60秒",cue:"标准或跪姿，胸部贴地"},
+      {id:"db_incline",name:"哑铃上斜卧推",sets:"3×10-12",w:"单边 5-7.5kg",r:"75秒",cue:"用书垫高，针对上胸"},
+      {id:"db_ohp1",name:"哑铃肩推",sets:"3×10",w:"单边 5kg",r:"75秒",cue:"核心收紧，不过度后仰"},
+      {id:"db_tri",name:"哑铃颈后臂屈伸",sets:"3×10-12",w:"单边 5kg",r:"60秒",cue:"肘部固定，针对三头"},
+    ],core:["死虫式 — 10次/侧","平板支撑 — 30秒"],coreNote:"5分钟 × 2轮"},
+  tue:{name:"周二 · 拉日",tag:"背 + 二头",rest:false,
+    ex:[
+      {id:"db_row1",name:"哑铃单臂划船",sets:"4×10/侧",w:"单边 7.5-10kg",r:"75秒",cue:"背部挺直，拉向髋部",track:true},
+      {id:"inv_row",name:"反向划船",sets:"3×力竭",w:"自重",r:"60秒",cue:"桌子/低杠，身体越水平越难"},
+      {id:"rear_fly",name:"俯身哑铃反向飞鸟",sets:"3×12-15",w:"单边 2.5kg",r:"60秒",cue:"针对后肩，改善圆肩"},
+      {id:"db_curl1",name:"哑铃弯举",sets:"3×10",w:"单边 5kg",r:"60秒",cue:"大臂固定，顶峰收缩"},
+      {id:"hammer",name:"锤式弯举",sets:"3×10",w:"单边 5kg",r:"60秒",cue:"针对肱肌，手臂更立体"},
+    ],core:["鸟狗式 — 10次/侧","平板支撑 — 30秒"],coreNote:"5分钟 × 2轮"},
+  wed:{name:"周三 · 休息日",tag:"轻有氧",rest:true,restIcon:"🚶",restText:"快走或跳绳 20分钟",restSub:"能正常说话，心率 <140"},
+  thu:{name:"周四 · 肩臂日",tag:"肩 + 手臂",rest:false,
+    ex:[
+      {id:"db_ohp2",name:"哑铃肩推",sets:"4×8-10",w:"单边 7.5kg",r:"90秒",cue:"坐姿，核心收紧",track:true},
+      {id:"lat_raise",name:"哑铃侧平举",sets:"4×12-15",w:"单边 2.5kg",r:"60秒",cue:"轻重量，控制为主，3秒下落"},
+      {id:"rear_raise",name:"俯身哑铃侧平举",sets:"3×12",w:"单边 2.5kg",r:"60秒",cue:"针对后束"},
+      {id:"db_curl2",name:"哑铃弯举",sets:"3×10",w:"单边 5kg",r:"60秒",cue:"不借力晃动"},
+      {id:"close_pushup",name:"窄距俯卧撑",sets:"3×力竭",w:"自重",r:"60秒",cue:"双手与肩同宽，三头发力"},
+    ],core:["死虫式 — 10次/侧","俄罗斯转体 — 20次"],coreNote:"5分钟 × 2轮"},
+  fri:{name:"周五 · 背 + 腿",tag:"下肢 + 上背",rest:false,
+    ex:[
+      {id:"rdl",name:"哑铃罗马尼亚硬拉",sets:"4×10",w:"双手共 10-15kg",r:"90秒",cue:"膝盖微屈，感受腘绳肌拉伸",track:true},
+      {id:"goblet",name:"哑铃高脚杯深蹲",sets:"3×10",w:"双手共 10kg",r:"90秒",cue:"蹲至大腿平行地面"},
+      {id:"db_row2",name:"哑铃双手划船",sets:"3×10",w:"双手共 10-15kg",r:"75秒",cue:"上背厚度"},
+      {id:"lunge",name:"哑铃弓步蹲",sets:"3×10/腿",w:"双手共 10kg",r:"75秒",cue:"步幅大，感受臀部"},
+    ],core:["卷腹 — 15次","平板支撑 — 30秒","死虫式 — 10次/侧"],coreNote:"8分钟 × 3轮"},
+  sat:{name:"周六 · 休息日",tag:"轻有氧",rest:true,restIcon:"🏃",restText:"慢跑或骑行 20-30分钟",restSub:"不喘，能说话，心率 120-140"},
+  sun:{name:"周日 · 完全休息",tag:"恢复",rest:true,restIcon:"😴",restText:"完全休息",restSub:"23:30 前入睡，保证恢复"},
+};
+const DAYS=["sun","mon","tue","wed","thu","fri","sat"];
+const DS={mon:"一",tue:"二",wed:"三",thu:"四",fri:"五",sat:"六",sun:"日"};
+const DL={mon:"推",tue:"拉",wed:"氧",thu:"肩臂",fri:"背腿",sat:"氧",sun:"休"};
+const TR=[{key:"db_bench",label:"卧推 单边"},{key:"db_row1",label:"划船 单边"},{key:"db_ohp2",label:"肩推 单边"},{key:"rdl",label:"硬拉 双手"},{key:"weight",label:"体重 (kg)"}];
+const SK="workout_tracker_v1";
+
+let state={log:{},weekly:{}}, curDay=DAYS[new Date().getDay()], curView="day";
+
+function load(){try{const s=localStorage.getItem(SK);if(s)state=JSON.parse(s)}catch(e){}if(!state.log)state.log={};if(!state.weekly)state.weekly={}}
+function save(){try{localStorage.setItem(SK,JSON.stringify(state))}catch(e){}}
+function td(){return new Date().toISOString().slice(0,10)}
+function lk(d){return d+"|"+td()}
+function gl(d){return state.log[lk(d)]||{done:{},lifts:{}}}
+function sl(d,data){state.log[lk(d)]=data}
+function logged(d){const l=state.log[lk(d)];return l&&l.done&&Object.values(l.done).some(Boolean)}
+
+// Timer
+let tInt=null,tSec=0;
+function tStart(s){clearInterval(tInt);tSec=s;tUpd();document.getElementById("timerBar").classList.add("active");tInt=setInterval(()=>{tSec--;if(tSec<=0){clearInterval(tInt);tSec=0;if(navigator.vibrate)navigator.vibrate([200,100,200]);const d=document.getElementById("timerDisplay");d.style.color="var(--green)";setTimeout(()=>d.style.color="var(--accent)",2000)}tUpd()},1000)}
+function tStop(){clearInterval(tInt);document.getElementById("timerBar").classList.remove("active")}
+function tUpd(){const m=Math.floor(tSec/60),s=tSec%60;document.getElementById("timerDisplay").textContent=String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
+document.getElementById("timer60").onclick=()=>tStart(60);
+document.getElementById("timer75").onclick=()=>tStart(75);
+document.getElementById("timer90").onclick=()=>tStart(90);
+document.getElementById("timerStop").onclick=()=>tStop();
+document.getElementById("timerToggle").onclick=()=>{const b=document.getElementById("timerBar");if(b.classList.contains("active"))tStop();else{tSec=90;tUpd();b.classList.add("active")}};
+
+function renderTabs(){
+  const t=document.getElementById("tabs");t.innerHTML="";
+  ["mon","tue","wed","thu","fri","sat","sun"].forEach(d=>{
+    const p=PLAN[d],el=document.createElement("div");
+    el.className="tab"+(d===curDay?" active":"")+(p.rest?" rest":"")+(logged(d)?" logged":"");
+    el.innerHTML=`<div class="d">${DS[d]}</div><div class="l">${DL[d]}</div><div class="dot"></div>`;
+    el.onclick=()=>{curDay=d;curView="day";setView("day");render()};
+    t.appendChild(el);
+  });
+}
+
+function renderDay(){
+  const v=document.getElementById("view-day"),d=PLAN[curDay];
+  let h=`<div class="dayhead"><h2>${d.name}</h2><span class="tag">${d.tag}</span></div>`;
+  if(d.rest){h+=`<div class="restday"><div class="icon">${d.restIcon||"🌙"}</div><div class="big">${d.restText}</div><div class="sub">${d.restSub}</div></div>`;v.innerHTML=h;return}
+  const log=gl(curDay);
+  d.ex.forEach((ex,i)=>{
+    const done=!!log.done[ex.id],lift=log.lifts[ex.id]||{};
+    h+=`<div class="ex ${done?"done":""} ${ex.track?"trackable":""}" data-id="${ex.id}">
+      <div class="ex-top"><div class="ex-num">${i+1}</div><div class="ex-body">
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-spec"><b>${ex.sets}</b><span>${ex.w}</span><span class="rest">休 ${ex.r}</span></div>
+        <div class="ex-cue">${ex.cue}</div>
+      </div><button class="ex-check" data-check="${ex.id}">✓</button></div>
+      ${ex.track?`<div class="ex-log"><div class="field"><label>重量 (kg)</label><input type="number" inputmode="decimal" step="0.5" data-lift="${ex.id}" data-f="w" value="${lift.w||""}" placeholder="${ex.w}"></div><div class="field"><label>次数</label><input type="number" inputmode="numeric" data-lift="${ex.id}" data-f="reps" value="${lift.reps||""}" placeholder="例 10"></div></div>`:""}
+    </div>`;
+  });
+  h+=`<div class="core"><h3>核心 · ${d.coreNote}</h3>`;
+  d.core.forEach(c=>{const[n,t]=c.split(" — ");h+=`<div class="row"><span>${n}</span><span>${t}</span></div>`});
+  h+=`</div><div class="savebar"><button class="btn btn-primary" id="saveBtn">保存今日记录</button></div>`;
+  v.innerHTML=h;
+  v.querySelectorAll("[data-check]").forEach(b=>{b.onclick=()=>{const id=b.dataset.check,lg=gl(curDay);lg.done[id]=!lg.done[id];sl(curDay,lg);save();renderDay();renderTabs()}});
+  v.querySelectorAll("[data-lift]").forEach(inp=>{inp.oninput=()=>{const id=inp.dataset.lift,f=inp.dataset.f,lg=gl(curDay);if(!lg.lifts[id])lg.lifts[id]={};lg.lifts[id][f]=inp.value;sl(curDay,lg)}});
+  document.getElementById("saveBtn").onclick=()=>{save();toast("已保存 ✓");renderTabs()};
+}
+
+function renderTrack(){
+  const v=document.getElementById("view-track");
+  let h=`<div class="card"><h3>每周追踪 <span class="pill">4周进度</span></h3><table><thead><tr><th>项目</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr></thead><tbody>`;
+  TR.forEach(row=>{h+=`<tr><td>${row.label}</td>`;for(let w=1;w<=4;w++){const key=row.key+"_w"+w,val=state.weekly[key]||"";h+=`<td><input class="wk-input" data-wk="${key}" value="${val}" placeholder="—"></td>`}h+=`</tr>`});
+  h+=`</tbody></table></div>`;
+  const recents=[];
+  Object.keys(state.log).sort().reverse().forEach(k=>{const[day,date]=k.split("|"),l=state.log[k];if(l.lifts){Object.keys(l.lifts).forEach(id=>{const lift=l.lifts[id];if(lift.w||lift.reps){const p=PLAN[day];if(!p||!p.ex)return;const ex=p.ex.find(e=>e.id===id);if(ex)recents.push({date,name:ex.name,w:lift.w,reps:lift.reps})}})}});
+  if(recents.length){h+=`<div class="card"><h3>历史记录</h3><table><thead><tr><th>日期</th><th>动作</th><th>重量</th><th>次数</th></tr></thead><tbody>`;recents.slice(0,20).forEach(r=>{h+=`<tr><td>${r.date.slice(5)}</td><td>${r.name}</td><td class="num">${r.w||"—"}</td><td class="num">${r.reps||"—"}</td></tr>`});h+=`</tbody></table></div>`}
+  h+=`<div class="savebar"><button class="btn btn-primary" id="saveWk">保存</button></div>`;
+  v.innerHTML=h;
+  v.querySelectorAll("[data-wk]").forEach(inp=>{inp.oninput=()=>{state.weekly[inp.dataset.wk]=inp.value}});
+  document.getElementById("saveWk").onclick=()=>{save();toast("已保存 ✓")};
+}
+
+function renderDiet(){
+  const v=document.getElementById("view-diet");
+  const meals=[["早餐","鸡蛋2-3个 + 牛奶/豆浆","~20g"],["午餐","正常吃，多一勺肉","~30g"],["练前 17:00","香蕉1根","—"],["练后 19:00","蛋白粉1勺 / 鸡蛋2个","~20g"],["晚餐 20:00","正常吃","~20g"]];
+  let h=`<div class="card"><h3>每日饮食 <span class="pill">目标 90-100g 蛋白</span></h3><table><thead><tr><th>时间</th><th>内容</th><th>蛋白</th></tr></thead><tbody>`;
+  meals.forEach(r=>h+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td></tr>`);
+  h+=`</tbody></table></div>`;
+  h+=`<div class="card"><h3>周计划一览</h3><div class="core" style="border:none;padding:0;background:transparent">
+    <div class="row"><span>周一 · 推日</span><span>胸肩三头</span></div>
+    <div class="row"><span>周二 · 拉日</span><span>背二头</span></div>
+    <div class="row"><span>周三 · 休息</span><span>轻有氧</span></div>
+    <div class="row"><span>周四 · 肩臂</span><span>肩手臂</span></div>
+    <div class="row"><span>周五 · 背腿</span><span>下肢上背</span></div>
+    <div class="row"><span>周六 · 休息</span><span>轻有氧</span></div>
+    <div class="row"><span>周日 · 休息</span><span>完全恢复</span></div>
+  </div></div>`;
+  v.innerHTML=h;
+}
+
+function setView(n){curView=n;document.querySelectorAll(".ptab").forEach(p=>p.classList.toggle("active",p.dataset.view===n));document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.getElementById("view-"+n).classList.add("active")}
+let tt;function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),1500)}
+
+// Import/Export
+document.getElementById("menuBtn").onclick=()=>document.getElementById("modal").classList.add("show");
+document.getElementById("modalClose").onclick=()=>document.getElementById("modal").classList.remove("show");
+document.getElementById("modal").onclick=e=>{if(e.target.id==="modal")e.target.classList.remove("show")};
+document.getElementById("exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="workout-backup-"+td()+".json";a.click();URL.revokeObjectURL(url);
+  toast("已导出 📦");document.getElementById("modal").classList.remove("show");
+};
+document.getElementById("importBtn").onclick=()=>document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.log||d.weekly){state=d;if(!state.log)state.log={};if(!state.weekly)state.weekly={};save();render();toast("已导入 ✓")}else toast("格式不对")}catch(err){toast("解析失败")}document.getElementById("modal").classList.remove("show")};
+  reader.readAsText(file);e.target.value="";
+};
+document.getElementById("clearBtn").onclick=()=>{if(confirm("确定清空所有训练记录？")){state={log:{},weekly:{}};save();render();toast("已清空");document.getElementById("modal").classList.remove("show")}};
+
+document.querySelectorAll(".ptab").forEach(p=>{p.onclick=()=>setView(p.dataset.view)});
+
+function render(){renderTabs();renderDay();renderTrack();renderDiet();setView(curView)}
+
+(function(){
+  load();
+  const n=new Date(),wd=["周日","周一","周二","周三","周四","周五","周六"][n.getDay()];
+  document.getElementById("dateline").textContent=`${n.getMonth()+1}月${n.getDate()}日 ${wd} · 18:00 开练`;
+  render();
+})();
+
+// Register Service Worker for PWA / offline
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+</script>
+</body>
+</html>
